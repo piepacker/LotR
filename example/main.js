@@ -91,26 +91,9 @@ window.run = function(gamePath) {
   Module.audio = audio;
 
   libretro(Module).then((retro) => {
-    retro.setOptions("fceumm_palette", "yuv-v3");
     retro.loadGame(gamePath);
-
-    // Example to set the controller type
-    // Controller name depends on the emulator/port
-    let controller = 'SNES Controller'
-    let controller_id = retro.env_controller_info[0].get(controller)
-    if (controller_id) {
-        retro.setControllerPortDevice(0, controller_id);
-    }
-
     listenKeyboard(retro);
-
     document.querySelector("#loading").style.display = "none";
-
-    if (retro.skip_frame) {
-      // keep a single frame for testing purpose
-      retro.skip_frame(1);
-    }
-
     retro.loop(-1);
   });
 }

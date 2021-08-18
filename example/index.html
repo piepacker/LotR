@@ -23,7 +23,7 @@
       }
       #screen {
         height: 100vh;
-        width: 125vh;
+        width: 133vh;
         image-rendering: -moz-crisp-edges;
         image-rendering: -webkit-crisp-edges;
         image-rendering: pixelated;
@@ -54,15 +54,15 @@
     <script>
       const btn = document.querySelector("button");
       btn.addEventListener("click", function () {
-        run("${ROM_FILE_NAME}");
+        run("main.lua");
         document.querySelector("#loading").style.display = "block";
         btn.style.display = "none";
       });
     </script>
   </body>
 
-  <script id="romScript" src="${ROM_FILE_JS}"></script>
-  <script src="wasm/${CORE_FILE_JS}"></script>
+  <script src="Onion Kidd.js"></script>
+  <script src="lutro_libretro.js"></script>
 
   <script type="module" src="main.js"></script>
 </html>

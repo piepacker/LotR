@@ -127,21 +127,7 @@ clean:
 
 re: clean all
 
-setup_emsdk:
-	# Way to dangerous to automatically delete a directory, imagine if user set /
-	@if [ -d $(EMSDK) ]; then echo "emsdk '$(EMSDK)' directory already exist, please delete-it manually"; exit 1; fi
-	# Install EMSDK
-	mkdir -p `dirname $(EMSDK)` && \
-		cd `dirname $(EMSDK)` && \
-		git clone https://github.com/emscripten-core/emsdk.git $(EMSDK) && \
-		cd $(EMSDK) && \
-		git checkout tags/2.0.9 && \
-		echo "13e29bd55185e3c12802bc090b4507901856b2ba" > ./emscripten-releases-tot.txt && \
-		./emsdk install tot && \
-		./emsdk activate tot
-	# Install EMSDK hack
-	cp -n $(EMSDK)/upstream/emscripten/src/preamble.js $(EMSDK)/upstream/emscripten/src/preamble.js.backup || true
-	cp -f src/preamble.js $(EMSDK)/upstream/emscripten/src/preamble.js
-
+serve:
+	python3 -m http.server 8000 --directory ./example
 
 .PHONY: all clean re gz upload setup_emsdk

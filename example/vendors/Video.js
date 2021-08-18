@@ -1,5 +1,3 @@
-import VideoVsyncTool from "./VideoVsyncTool.js";
-
 const vertShaderScript = `
   precision mediump float;
 
@@ -24,7 +22,7 @@ const fragShaderScript = `
 
   void main() {
     vec4 c = texture2D(Texture, fragTexCoord);
-    gl_FragColor = vec4(c.rgb, 1.0);
+    gl_FragColor = vec4(c.bgr, 1.0);
   }
 `;
 
@@ -73,15 +71,8 @@ export default class Video {
     this.data = null;
     this.program = null;
 
-    // Js API is just useless, you can't call getContext without recreating the full canvas
-    this.useGL = false
-    if (this.useGL) {
-      this.configure(this.canvas.getContext('webgl2'));
-      this.vsyncTool = new VideoVsyncTool();
-    } else {
-      this.nogl = this.canvas.getContext('2d')
-      this.vsyncTool = null
-    }
+    this.useGL = true
+    this.configure(this.canvas.getContext('webgl2'));
   }
 
   updateFilter() {
@@ -122,11 +113,6 @@ export default class Video {
 
   setPixelFormat(format) {
     this.format = format;
-
-    if (!this.useGL) {
-      // no webgl we are done
-      return
-    }
 
     switch (format) {
       case 0: // RETRO_PIXEL_FORMAT_0RGB1555
@@ -174,12 +160,6 @@ export default class Video {
 
     this.gl = gl;
     this.gl.clearColor(0, 0, 0, 0);
-
-    if (this.vsyncTool) {
-        this.vsyncTool.initTextures(gl);
-        this.vsyncTool.initVertexBuffers(gl);
-        this.vsyncTool.initShaders(gl);
-    }
 
     const fragShader = this.createShader(
       this.gl.FRAGMENT_SHADER,
@@ -271,103 +251,13 @@ export default class Video {
     return program;
   }
 
-  updateCanvasSize() {
-    const width = Math.max(1, this.width)
-    const height = Math.max(1, this.height)
-
-    if (this.canvas) {
-      this.canvas.width = width
-      this.canvas.height = height
-    }
-  }
-
-
   updateViewport() {
-    // the canvas in WebGL appears to be analogous to an FBO in regular GL terms, and this FBO will
-    // be stretched to fit the client area of the div that the canvas is attached to. FBO rendering
-    // behavior onto the canvas is controlled via canvas CSS settings (image-rendering attribute).
-    //
-    // For most purposes we want the canvas size to match the client area of the canvas, and then control
-    // rendering behavior using more standard and flexible OpenGL texturing settings. The main advantage
-    // of using a smaller fixed canvas (fbo) would be for performance: smaller canvas translates into
-    // slightly less memory and fillrate. (maybe relevant to mobile devices, probably useless on desktops)
-
-    let width  = Math.max(1, this.canvas.clientWidth );
-    let height = Math.max(1, this.canvas.clientHeight);
-
-    if (this.canvas) {
-      // sets the borwser's internal FBO size (frontbufferobject)
-      this.canvas.width  = width ;
-      this.canvas.height = height;
-    }
-
-    if (this.gl.viewport) {
-      this.gl.viewport(0, 0, width, height);
-    }
+    this.canvas.width  = this.width;
+    this.canvas.height = this.height;
+    this.gl.viewport(0, 0, this.width, this.height);
   }
 
-  renderNoGL() {
-    let front_buffer = this.nogl.createImageData(
-      this.canvas.width,
-      this.canvas.height
-    )
-    let buf = front_buffer.data
-    let out = 0
-    switch (this.format) {
-      case 2: // RETRO_PIXEL_FORMAT_RGB565
-        for (let y = 0; y < this.height; y++) {
-          // in_line index is in pixel, but this.pitch is in byte
-          let in_line = (this.pitch / 2) * y
-          out = this.canvas.width * 4 * y
-          for (let x = 0; x < this.width; x++) {
-            let input = in_line + x // data is uint16 array, so pixel indexed
-            let color = this.data[input]
-            buf[out] = (color & 0xf800) >> 8
-            out++
-            buf[out] = (color & 0x07e0) >> 3
-            out++
-            buf[out] = (color & 0x001f) << 3
-            out++
-            buf[out] = 255
-            out++
-          }
-        }
-        break
-      case 1: // RETRO_PIXEL_FORMAT_XRGB8888
-        for (let y = 0; y < this.height; y++) {
-          let in_line = this.pitch * y
-          out = this.canvas.width * 4 * y
-          for (let x = 0; x < this.width; x++) {
-            // Swap RED and BLUE channel
-            let input = in_line + x * 4 // data is uint8 array
-            buf[out] = this.data[input + 2]
-            out++
-            buf[out] = this.data[input + 1]
-            out++
-            buf[out] = this.data[input + 0]
-            out++
-            buf[out] = 255
-            out++
-          }
-        }
-        break
-      default:
-        break
-    }
-    createImageBitmap(front_buffer, 0, 0, this.width, this.height).then(
-      (image) => {
-        this.nogl.drawImage(
-          image,
-          0,
-          0,
-          this.canvas.width,
-          this.canvas.height
-        )
-      }
-    )
-  }
-
-  renderGL() {
+  render() {
     this.updateViewport();
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT);
@@ -410,30 +300,5 @@ export default class Video {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.vbo);
 
     this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-
-    if (this.vsyncTool) {
-        this.vsyncTool.renderFlasher(this.gl);
-    }
   }
-
-    render() {
-        if (
-            !this.data ||
-            this.width === 0 ||
-            this.height === 0 ||
-            this.pitch === 0
-        )
-            return
-
-        this.updateCanvasSize()
-
-        if (this.gl == null) {
-            this.useGL = false
-        }
-        if (this.useGL) {
-            this.renderGL()
-        } else {
-            this.renderNoGL()
-        }
-    }
 }
