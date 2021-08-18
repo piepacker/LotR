@@ -81,8 +81,7 @@ function listenKeyboard(retro) {
   });
 }
 
-// export run() into the window, so that <script> tags in index.html can access it.
-window.run = function(gamePath) {
+function run(gamePath) {
   const canvas = document.querySelector("#screen");
   const video = new Video(canvas);
   const audio = new Audio();
@@ -97,3 +96,10 @@ window.run = function(gamePath) {
     retro.loop(-1);
   });
 }
+
+const btn = document.querySelector("button");
+btn.addEventListener("click", function () {
+  run("main.lua");
+  document.querySelector("#loading").style.display = "block";
+  btn.style.display = "none";
+});
