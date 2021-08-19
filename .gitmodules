@@ -1,27 +1,27 @@
 [submodule "cores/blastem"]
 	path = cores/blastem
-	url = git@github.com:piepacker/blastem.git
+	url = https://github.com/piepacker/blastem.git
 [submodule "cores/lutro"]
 	path = cores/lutro
-	url = git@github.com:piepacker/lutro.git
+	url = https://github.com/piepacker/lutro.git
 [submodule "cores/mgba"]
 	path = cores/mgba
-	url = git@github.com:piepacker/mgba.git
+	url = https://github.com/piepacker/mgba.git
 [submodule "cores/mesen"]
 	path = cores/mesen
-	url = git@github.com:piepacker/mesen.git
+	url = https://github.com/piepacker/mesen.git
 [submodule "cores/mame"]
 	path = cores/mame
-	url = git@github.com:piepacker/mame.git
+	url = https://github.com/piepacker/mame.git
 [submodule "cores/mesens"]
 	path = cores/mesens
-	url = git@github.com:piepacker/mesens.git
+	url = https://github.com/piepacker/mesens.git
 [submodule "cores/sameboy"]
 	path = cores/sameboy
-	url = git@github.com:piepacker/sameboy.git
+	url = https://github.com/piepacker/sameboy.git
 [submodule "cores/frontend"]
 	path = cores/frontend
-	url = git@github.com:piepacker/arkanoid.git
+	url = https://github.com/piepacker/arkanoid.git
 [submodule "cores/np2kai"]
 	path = cores/np2kai
-	url = git@github.com:piepacker/np2kai.git
+	url = https://github.com/piepacker/np2kai.git
