@@ -66,6 +66,10 @@ function pollInputs(retro) {
         if (joyMapping.hasOwnProperty(code))
           retro.input_user_state[pad.index][joyMapping[code]] = v.pressed
       });
+      if (pad.axes[0] >  0.5) retro.input_user_state[pad.index][7] = true;
+      if (pad.axes[0] < -0.5) retro.input_user_state[pad.index][6] = true;
+      if (pad.axes[1] >  0.5) retro.input_user_state[pad.index][5] = true;
+      if (pad.axes[1] < -0.5) retro.input_user_state[pad.index][4] = true;
     }
   }, 8)
 }
