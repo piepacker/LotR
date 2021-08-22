@@ -1,7 +1,7 @@
 import Video from "./vendors/Video.js";
 import Audio from "./vendors/Audio.js";
 
-const mapping = {
+const keyMapping = {
   KeyZ: 0, // RETRO_DEVICE_ID_JOYPAD_B
   KeyA: 1, // RETRO_DEVICE_ID_JOYPAD_Y
   ShiftRight: 2, // RETRO_DEVICE_ID_JOYPAD_SELECT
@@ -16,69 +16,58 @@ const mapping = {
   KeyW: 11, // RETRO_DEVICE_ID_JOYPAD_R
 };
 
-let sram = null;
-let savestate = null;
-let paused = false;
+const joyMapping = {
+  0: 0, // RETRO_DEVICE_ID_JOYPAD_B
+  2: 1, // RETRO_DEVICE_ID_JOYPAD_Y
+  8: 2, // RETRO_DEVICE_ID_JOYPAD_SELECT
+  9: 3, // RETRO_DEVICE_ID_JOYPAD_START
+  12: 4, // RETRO_DEVICE_ID_JOYPAD_UP
+  13: 5, // RETRO_DEVICE_ID_JOYPAD_DOWN
+  14: 6, // RETRO_DEVICE_ID_JOYPAD_LEFT
+  15: 7, // RETRO_DEVICE_ID_JOYPAD_RIGHT
+  1: 8, // RETRO_DEVICE_ID_JOYPAD_A
+  3: 9, // RETRO_DEVICE_ID_JOYPAD_X
+  4: 10, // RETRO_DEVICE_ID_JOYPAD_L
+  5: 11, // RETRO_DEVICE_ID_JOYPAD_R
+}
 
-function listenKeyboard(retro) {
-  window.addEventListener(`keydown`, (e) => {
+function pollInputs(retro) {
+  window.addEventListener(`keydown`, e => {
     e.preventDefault();
-    if (mapping.hasOwnProperty(e.code)) {
-      retro.input_user_state[0][mapping[e.code]] = true;
+    if (keyMapping.hasOwnProperty(e.code)) {
+      retro.input_user_state[0][keyMapping[e.code]] = true;
     }
   });
 
-  window.addEventListener(`keyup`, (e) => {
+  window.addEventListener(`keyup`, e => {
     e.preventDefault();
-    if (mapping.hasOwnProperty(e.code)) {
-      retro.input_user_state[0][mapping[e.code]] = false;
+    if (keyMapping.hasOwnProperty(e.code)) {
+      retro.input_user_state[0][keyMapping[e.code]] = false;
     }
   });
 
-  window.addEventListener(`keydown`, (e) => {
+  window.addEventListener(`keydown`, e => {
     e.preventDefault();
     if (e.code == "KeyF") {
       const wrapper = document.querySelector("#wrapper");
       wrapper.webkitRequestFullScreen && wrapper.webkitRequestFullScreen();
       wrapper.mozRequestFullScreen && wrapper.mozRequestFullScreen();
     }
-    if (e.code == "KeyR") {
-      // reset
-      retro.reset();
-      if (sram !== null && sram.length > 0) retro.setSRAM(sram);
-    }
-    if (e.code == "KeyY") {
-      // savestate
-      savestate = retro.getState();
-    }
-    if (e.code == "KeyU") {
-      // loadstate
-      retro.setState(savestate);
-    }
-    if (e.code == "KeyG") {
-      // screenshot
-      const canvas = document.querySelector("#screen");
-      const dataURL = canvas.toDataURL("png");
-      console.log(dataURL);
-
-      const img = document.createElement("img");
-      img.src = dataURL;
-      document.body.appendChild(img);
-    }
-    if (e.code == "KeyH") {
-      // savefile
-      sram = retro.getSRAM();
-      console.log(sram);
-    }
-    if (e.code == "KeyP") {
-      paused = !paused;
-      console.log(paused)
-      retro.setPaused(paused);
-    }
-    if (e.code == "KeyQ") {
-      retro.unloadGame();
-    }
   });
+
+  window.addEventListener(`gamepadconnected`, e => {
+    console.log("pad connected:", e.gamepad.id);
+  });
+
+  window.setInterval(() => {
+    for (const pad of navigator.getGamepads()) {
+      if (!pad) continue;
+      pad.buttons.forEach((v, code) => {
+        if (joyMapping.hasOwnProperty(code))
+          retro.input_user_state[pad.index][joyMapping[code]] = v.pressed
+      });
+    }
+  }, 8)
 }
 
 function run(gamePath) {
@@ -91,7 +80,7 @@ function run(gamePath) {
 
   libretro(Module).then((retro) => {
     retro.loadGame(gamePath);
-    listenKeyboard(retro);
+    pollInputs(retro);
     document.querySelector("#loading").style.display = "none";
     retro.loop(-1);
   });
