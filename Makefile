@@ -27,7 +27,7 @@ LDFLAGS += -O3
 SETUP = dist
 
 ifeq ($(OUTDIR),)
-	OUTDIR := ./example/wasm
+	OUTDIR := ./example
 endif
 
 $(FE_RETRO_BC): $(SETUP)
