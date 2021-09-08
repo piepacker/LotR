@@ -25,3 +25,6 @@
 [submodule "cores/np2kai"]
 	path = cores/np2kai
 	url = git@github.com:piepacker/np2kai.git
+[submodule "cores/dosbox_pure"]
+	path = cores/dosbox_pure
+	url = https://github.com/piepacker/dosbox_pure.git
