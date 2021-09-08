@@ -119,7 +119,7 @@ mgba.bc: $(SETUP)
 dist:
 	mkdir -p $(OUTDIR)
 
-all: mametiny mesens lutro mgba blastem mamearcade mesen
+all: mametiny mesens lutro mgba blastem mamearcade mesen sameboy dosbox_pure
 
 clean:
 	@$(RM) -f $(OUTDIR)/*_libretro.js
@@ -131,6 +131,7 @@ clean:
 	platform=emscripten emmake make -C cores/mesens/Libretro clean
 	platform=emscripten emmake make -C cores/mesen/Libretro clean
 	platform=emscripten emmake make -C cores/mame -f Makefile.libretro SUBTARGET=tiny clean
+	platform=emscripten emmake make -C cores/sameboy/libretro clean
 	platform=emscripten emmake make -C cores/dosbox_pure clean
 
 re: clean all
