@@ -41,6 +41,13 @@ sameboy: $(SETUP) $(FE_RETRO_BC) sameboy.bc
 sameboy.bc: $(SETUP)
 	platform=emscripten emmake make $(MAKEFLAGS) -C cores/sameboy/libretro
 
+dosbox_pure: $(SETUP) $(FE_RETRO_BC) dosbox_pure.bc
+	emcc $(FE_RETRO_BC) \
+		cores/dosbox_pure/dosbox_pure_libretro_emscripten.bc \
+		$(LDFLAGS) -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH=1 -o $(OUTDIR)/dosbox_pure_libretro.js
+
+dosbox_pure.bc: $(SETUP)
+	platform=emscripten emmake make $(MAKEFLAGS) -C cores/dosbox_pure
 
 blastem: $(SETUP) $(FE_RETRO_BC) blastem.bc
 	emcc $(FE_RETRO_BC) \
@@ -124,6 +131,7 @@ clean:
 	platform=emscripten emmake make -C cores/mesens/Libretro clean
 	platform=emscripten emmake make -C cores/mesen/Libretro clean
 	platform=emscripten emmake make -C cores/mame -f Makefile.libretro SUBTARGET=tiny clean
+	platform=emscripten emmake make -C cores/dosbox_pure clean
 
 re: clean all
 
