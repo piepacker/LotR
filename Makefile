@@ -44,7 +44,7 @@ sameboy.bc: $(SETUP)
 dosbox_pure: $(SETUP) $(FE_RETRO_BC) dosbox_pure.bc
 	emcc $(FE_RETRO_BC) \
 		cores/dosbox_pure/dosbox_pure_libretro_emscripten.bc \
-		$(LDFLAGS) -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH=1 -o $(OUTDIR)/dosbox_pure_libretro.js
+		$(LDFLAGS) -s INITIAL_MEMORY=512MB -s ALLOW_MEMORY_GROWTH=1 -o $(OUTDIR)/dosbox_pure_libretro.js
 
 dosbox_pure.bc: $(SETUP)
 	platform=emscripten emmake make $(MAKEFLAGS) -C cores/dosbox_pure
