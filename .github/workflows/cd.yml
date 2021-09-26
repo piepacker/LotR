@@ -26,7 +26,7 @@ jobs:
       - name: ZIP Release
         uses: papeloto/action-zip@v1
         with:
-          files: example/blastem_libretro.js example/blastem_libretro.wasm
+          files: example/blastem_libretro.js example/blastem_libretro.wasm index.html main.js vendors
           dest: blastem_libretro.zip
 
       - name: Get release
@@ -62,7 +62,7 @@ jobs:
       - name: ZIP Release
         uses: papeloto/action-zip@v1
         with:
-          files: example/lutro_libretro.js example/lutro_libretro.wasm
+          files: example/lutro_libretro.js example/lutro_libretro.wasm index.html main.js vendors
           dest: lutro_libretro.zip
 
       - name: Get release
