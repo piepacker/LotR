@@ -14,7 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: echo "VERSION=$(echo ${{ github.event.release.tag_name }} | cut -c 2-)" >> $GITHUB_ENV
-      - run: git clone https://github.com/emscripten-core/emsdk.git && cd emsdk && git checkout tags/2.0.9 && echo "13e29bd55185e3c12802bc090b4507901856b2ba" > ./emscripten-releases-tot.txt && ./emsdk install tot && ./emsdk activate tot
+
+      - name: Setup emsdk
+        uses: mymindstorm/setup-emsdk@v9
+        with:
+          version: 2.0.9
+          actions-cache-folder: 'emsdk-cache'
+
       - run: make blastem -j4
 
       - name: ZIP Release
