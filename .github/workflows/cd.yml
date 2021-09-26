@@ -20,7 +20,6 @@ jobs:
         uses: mymindstorm/setup-emsdk@v9
         with:
           version: 2.0.9
-          actions-cache-folder: 'emsdk-cache'
 
       - run: make blastem -j4
 
