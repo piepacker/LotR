@@ -96,8 +96,39 @@ function run(gamePath) {
 }
 
 const btn = document.querySelector("button");
-btn.addEventListener("click", function () {
-  run("main.lua");
-  document.querySelector("#loading").style.display = "block";
-  btn.style.display = "none";
+
+let peer = new Peer();
+
+peer.on("open", function(id) {
+  console.log("My peer ID is: " + id);
 });
+
+function registerConn(conn) {
+  console.log("connection", conn);
+
+  conn.on("open", function() {
+    conn.on("data", function(data) {
+      console.log("Received", data);
+
+      run("main.lua");
+      document.querySelector("#loading").style.display = "block";
+      btn.style.display = "none";
+    });
+
+    conn.send("Hello!");
+  });
+}
+
+peer.on("connection", function(conn) {
+  registerConn(conn)
+});
+
+btn.addEventListener("click", function () {
+  const peerId = window.prompt('Peer ID');
+  if (!peerId)
+    return;
+
+  const conn = peer.connect(peerId);
+  registerConn(conn);
+});
+
