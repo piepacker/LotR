@@ -1,5 +1,6 @@
 import Video from "./vendors/Video.js";
 import Audio from "./vendors/Audio.js";
+import Netplay from "./vendors/Netplay.js";
 
 const keyMapping = {
   KeyZ: 0, // RETRO_DEVICE_ID_JOYPAD_B
@@ -74,15 +75,22 @@ function pollInputs(retro) {
   }, 8)
 }
 
-function run(gamePath) {
+function run(gamePath, conn) {
   const canvas = document.querySelector("#screen");
   const video = new Video(canvas);
   const audio = new Audio();
+
 
   Module.video = video;
   Module.audio = audio;
 
   libretro(Module).then((retro) => {
+    const netplay = new Netplay(
+      conn,
+      () => pollInputs(retro),
+      () => retro.iterate(),
+    );
+
     retro.loadGame(gamePath);
     pollInputs(retro);
     document.querySelector("#loading").style.display = "none";
@@ -110,7 +118,7 @@ function registerConn(conn) {
     conn.on("data", function(data) {
       console.log("Received", data);
 
-      run("main.lua");
+      run("main.lua", conn);
       document.querySelector("#loading").style.display = "block";
       btn.style.display = "none";
     });
