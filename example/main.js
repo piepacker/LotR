@@ -86,7 +86,12 @@ function run(gamePath) {
     retro.loadGame(gamePath);
     pollInputs(retro);
     document.querySelector("#loading").style.display = "none";
-    retro.loop(-1);
+
+    const iterate = () => {
+      retro.iterate();
+      window.requestAnimationFrame(iterate);
+    }
+    window.requestAnimationFrame(iterate);
   });
 }
 
