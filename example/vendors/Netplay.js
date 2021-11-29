@@ -5,7 +5,7 @@ let tickSyncing = false;
 let tickOffset = 0.0;
 let lastConfirmedTick = 0;
 let syncedLastUpdate = false;
-const detectDesyncs = true
+const detectDesyncs = false
 const desyncCheckRate = 10;
 
 const inputDelayFrames = 3;
@@ -30,7 +30,6 @@ let localTickDelta = 0;
 let remoteTickDelta = 0;
 let localInputHistory = new Uint32Array(historySize);
 let remoteInputHistory = new Uint32Array(historySize);
-// let clientAddr net.Addr;
 let lastSyncedTick = -1;
 // let messages chan []byte;
 
@@ -58,11 +57,20 @@ export default class Netplay {
     this.localPlayerPort = lpp;
     this.remotePlayerPort = rpp;
 
-    conn.on("data", function(data) {
-      const pkt = JSON.parse(data);
-      console.log("Received", pkt);
+    this.listen();
 
-      if (pkt.code == MsgCodePlayerInput) {
+    this.sendPacket(this.makeHandshakePacket(), 1);
+  }
+
+  listen() {
+    this.conn.on("data", (data) => {
+      const pkt = JSON.parse(data);
+      // console.log("Received", pkt);
+
+      if (pkt.code == MsgCodeHandshake) {
+        connectedToClient = true;
+      }
+      else if (pkt.code == MsgCodePlayerInput) {
         // Break apart the packet into its parts.
         const tickDelta = pkt.tickDelta;
         const receivedTick = pkt.receivedTick;
@@ -85,14 +93,14 @@ export default class Netplay {
           }
         }
       }
-
-    //           else if code == MsgCodePing {
-    //           var pingTime int64
-    //           binary.Read(r, binary.LittleEndian, &pingTime)
-    //           sendPacket(makePongPacket(time.Unix(pingTime, 0)), 1)
-    //         } else if code == MsgCodePong {
-    //           var pongTime int64
-    //           binary.Read(r, binary.LittleEndian, &pongTime)
+      else if (pkt.code == MsgCodePing) {
+        const t = pkt.time;
+        this.sendPacket(this.makePongPacket(t), 1);
+      }
+      else if (pkt.code == MsgCodePong) {
+        const t = pkt.time;
+        // console.log(t);
+      }
     //         } else if code == MsgCodeSync {
     //           var tick int64
     //           var syncData uint32
@@ -108,15 +116,13 @@ export default class Netplay {
     //           }
     //         }
     });
-
-    conn.send(JSON.stringify({code: MsgCodeHandshake}));
   }
 
   update() {
     let lastGameTick = tick;
     let shouldUpdate = false;
 
-    receiveData();
+    // receiveData();
 
     if (connectedToClient) {
       // First we assume that the game can be updated, sync checks below can halt updates
@@ -180,11 +186,11 @@ export default class Netplay {
 
       // Update local input history
       let sendInput = this.inputGetLatest(this.localPlayerPort);
-      setLocalInput(sendInput, lastGameTick+inputDelayFrames);
+      this.setLocalInput(sendInput, lastGameTick+inputDelayFrames);
 
       // Set the input state for the current tick for the remote player's character.
-      input.SetState(this.localPlayerPort, this.getLocalInputState(lastGameTick));
-      input.SetState(this.remotePlayerPort, this.getRemoteInputState(lastGameTick));
+      this.inputSetState(this.localPlayerPort, this.getLocalInputState(lastGameTick));
+      this.inputSetState(this.remotePlayerPort, this.getRemoteInputState(lastGameTick));
 
       // Increment the tick count only when the game actually updates.
       this.gameUpdate();
@@ -219,21 +225,19 @@ export default class Netplay {
   }
 
   serialize() {
-    const s = state.Core.SerializeSize();
-    saved.GameState = state.Core.Serialize(s);
-    saved.Inputs = input.Serialize();
+    saved.GameState = this.retro.getState();
+    // saved.Inputs = input.Serialize();
     saved.Tick = tick;
   }
 
   unserialize() {
-    if (len(saved.GameState) == 0) {
+    if (saved.GameState.length == 0) {
       console.log("Trying to unserialize a savestate of len 0");
       return;
     }
 
-    const s = state.Core.SerializeSize();
-    state.Core.Unserialize(saved.GameState, s);
-    input.Unserialize(saved.Inputs);
+    this.retro.setState(saved.GameState);
+    // input.Unserialize(saved.Inputs);
     tick = saved.Tick;
   }
 
@@ -254,7 +258,7 @@ export default class Netplay {
       console.log("Rollback", rollbackFrames, "frames");
 
       // Disable audio because audio is blocking
-      state.FastForward = true;
+      // state.FastForward = true;
 
       // Must revert back to the last known synced game frame.
       this.unserialize();
@@ -283,7 +287,7 @@ export default class Netplay {
       }
 
       // Enable audio again
-      state.FastForward = false;
+      // state.FastForward = false;
     }
   }
 
@@ -389,7 +393,7 @@ export default class Netplay {
     if (duplicates == 0)
       duplicates = 1;
 
-    for (i = 0; i < duplicates; i++) {
+    for (let i = 0; i < duplicates; i++) {
       this.sendPacketRaw(packet);
     }
   }
@@ -413,7 +417,7 @@ export default class Netplay {
 
   // inputGetLatest returns the most recent polled inputs
   inputGetLatest(port /*uint*/) /*PlayerState*/ {
-    return NewState[port];
+    return this.retro.input_user_state[port];
   }
 
   inputCurrentState(port /*uint*/) /*PlayerState*/ {
@@ -439,10 +443,10 @@ export default class Netplay {
 
     const historyIndexStart = tck - sendHistorySize + 1;
     // console.log("Make input", tck, historyIndexStart)
-    for (i = 0; i < sendHistorySize; i++) {
+    for (let i = 0; i < sendHistorySize; i++) {
       const encodedInput = localInputHistory[(historySize+historyIndexStart+i)%historySize];
       // binary.Write(buf, binary.LittleEndian, encodedInput);
-      inputs[i] = encodedInput;
+      pkt.inputs[i] = encodedInput;
       // console.log((historySize + historyIndexStart + i) % historySize)
     }
 
@@ -451,28 +455,28 @@ export default class Netplay {
 
   // Send a ping message in order to test network latency
   sendPingMessage() {
-    this.sendPacket(this.makePingPacket(time.Now()), 1);
+    this.sendPacket(this.makePingPacket(Date.now()), 1);
   }
 
   // Make a ping packet
   makePingPacket(t /*time.Time*/) /*[]byte*/ {
-    let buf = new(bytes.Buffer);
-    binary.Write(buf, binary.LittleEndian, MsgCodePing);
-    binary.Write(buf, binary.LittleEndian, t.Unix());
-    return buf.Bytes();
+    return JSON.stringify({
+      code: MsgCodePing,
+      time: t,
+    });
   }
 
   // Make pong packet
   makePongPacket(t /*time.Time*/) /*[]byte*/ {
-    let buf = new(bytes.Buffer);
-    binary.Write(buf, binary.LittleEndian, MsgCodePong);
-    binary.Write(buf, binary.LittleEndian, t.Unix());
-    return buf.Bytes();
+    return JSON.stringify({
+      code: MsgCodePong,
+      time: t,
+    });
   }
 
   // Sends sync data
   sendSyncData() {
-    sendPacket(this.makeSyncDataPacket(localSyncDataTick, localSyncData), 5);
+    this.sendPacket(this.makeSyncDataPacket(localSyncDataTick, localSyncData), 5);
   }
 
   // Make a sync data packet
@@ -486,9 +490,7 @@ export default class Netplay {
 
   // Generate handshake packet for connecting with another client.
   makeHandshakePacket() /*[]byte*/ {
-    let buf = new(bytes.Buffer);
-    binary.Write(buf, binary.LittleEndian, MsgCodeHandshake);
-    return buf.Bytes();
+    return JSON.stringify({code: MsgCodeHandshake});
   }
 
   // Encodes the player input state into a compact form for network transmission.

@@ -87,7 +87,7 @@ function run(gamePath, conn, lpp, rpp) {
     const netplay = new Netplay(
       retro,
       conn,
-      () => pollInputs(retro),
+      () => {}, // pollInputs(retro),
       () => retro.iterate(),
       lpp,
       rpp,
@@ -98,7 +98,7 @@ function run(gamePath, conn, lpp, rpp) {
     document.querySelector("#loading").style.display = "none";
 
     const iterate = () => {
-      retro.iterate();
+      netplay.update();
       window.requestAnimationFrame(iterate);
     }
     window.requestAnimationFrame(iterate);
