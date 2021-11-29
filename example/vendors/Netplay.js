@@ -394,14 +394,8 @@ export default class Netplay {
     if (duplicates == 0)
       duplicates = 1;
 
-    for (let i = 0; i < duplicates; i++) {
-      this.sendPacketRaw(packet);
-    }
-  }
-
-  // Send a packet immediately
-  sendPacketRaw(packet /*[]byte*/) {
-    this.conn.send(packet);
+    for (let i = 0; i < duplicates; i++)
+      this.conn.send(packet);
   }
 
   inputIndex(offset /*int64*/) /*int64*/ {

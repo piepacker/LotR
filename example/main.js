@@ -58,23 +58,23 @@ function pollInputs(retro) {
     }
   });
 
-  window.addEventListener(`gamepadconnected`, e => {
-    console.log("pad connected:", e.gamepad.id);
-  });
+  // window.addEventListener(`gamepadconnected`, e => {
+  //   console.log("pad connected:", e.gamepad.id);
+  // });
 
-  window.setInterval(() => {
-    for (const pad of navigator.getGamepads()) {
-      if (!pad) continue;
-      pad.buttons.forEach((v, code) => {
-        if (joyMapping.hasOwnProperty(code))
-          polled[pad.index][joyMapping[code]] = v.pressed
-      });
-      if (pad.axes[0] >  0.5) polled[pad.index][7] = true;
-      if (pad.axes[0] < -0.5) polled[pad.index][6] = true;
-      if (pad.axes[1] >  0.5) polled[pad.index][5] = true;
-      if (pad.axes[1] < -0.5) polled[pad.index][4] = true;
-    }
-  }, 8)
+  // window.setInterval(() => {
+  //   for (const pad of navigator.getGamepads()) {
+  //     if (!pad) continue;
+  //     pad.buttons.forEach((v, code) => {
+  //       if (joyMapping.hasOwnProperty(code))
+  //         polled[pad.index][joyMapping[code]] = v.pressed
+  //     });
+  //     if (pad.axes[0] >  0.5) polled[pad.index][7] = true;
+  //     if (pad.axes[0] < -0.5) polled[pad.index][6] = true;
+  //     if (pad.axes[1] >  0.5) polled[pad.index][5] = true;
+  //     if (pad.axes[1] < -0.5) polled[pad.index][4] = true;
+  //   }
+  // }, 8)
 }
 
 function run(gamePath, conn, lpp, rpp) {
@@ -89,17 +89,16 @@ function run(gamePath, conn, lpp, rpp) {
     const netplay = new Netplay(
       retro,
       conn,
-      () => { retro.input_user_state = polled },
+      () => { retro.input_user_state[lpp] = polled[0] },
       () => retro.iterate(),
       lpp,
       rpp,
     );
+    retro.inputState = (port, id) => { return netplay.inputCurrentState(port)[id] };
 
     retro.loadGame(gamePath);
     pollInputs(retro);
     document.querySelector("#loading").style.display = "none";
-
-    retro.inputState = (port, id) => { return netplay.inputCurrentState(port)[id] };
 
     const iterate = () => {
       netplay.update();
