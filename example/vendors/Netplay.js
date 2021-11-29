@@ -8,7 +8,7 @@ let syncedLastUpdate = false;
 const detectDesyncs = false
 const desyncCheckRate = 10;
 
-const inputDelayFrames = 3;
+const inputDelayFrames = 5;
 const historySize = 60;
 const sendHistorySize = 5;
 
@@ -58,7 +58,6 @@ export default class Netplay {
     this.unserializeCb = unserializeCb;
     this.localPlayerPort = lpp;
     this.remotePlayerPort = rpp;
-    this.fastForward = false;
 
     this.listen();
 
@@ -260,9 +259,6 @@ export default class Netplay {
 
       // console.log("Rollback", rollbackFrames, "frames");
 
-      // Execute as fast as possible to catch up
-      this.fastForward = true;
-
       // Must revert back to the last known synced game frame.
       this.unserialize();
 
@@ -288,9 +284,6 @@ export default class Netplay {
           this.checkSync();
         }
       }
-
-      // Back to normal speed
-      this.fastForward = false;
     }
   }
 

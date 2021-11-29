@@ -104,12 +104,7 @@ function run(gamePath, conn, lpp, rpp) {
 
     const iterate = () => {
       netplay.update();
-      if (netplay.fastForward) {
-        console.log('fastForward');
-        iterate();
-      } else {
-        window.requestAnimationFrame(iterate);
-      }
+      window.requestAnimationFrame(iterate);
     }
     window.requestAnimationFrame(iterate);
   });
