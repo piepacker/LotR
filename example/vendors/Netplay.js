@@ -49,13 +49,15 @@ let saved = {
 }
 
 export default class Netplay {
-  constructor(conn, inputPollCb, inputStateCb, updateCb, serializeCb, unserializeCb, lpp, rpp) {
+  constructor(conn, inputPollCb, inputStateCb, updateCb, serializeCb, unserializeCb, setFastCb, unsetFastCb, lpp, rpp) {
     this.conn = conn;
     this.inputPoll = inputPollCb;
     this.inputState = inputStateCb;
     this.gameUpdate = updateCb;
     this.serializeCb = serializeCb;
     this.unserializeCb = unserializeCb;
+    this.setFastCb = setFastCb;
+    this.unsetFastCb = unsetFastCb;
     this.localPlayerPort = lpp;
     this.remotePlayerPort = rpp;
 
@@ -258,6 +260,8 @@ export default class Netplay {
       // Must revert back to the last known synced game frame.
       this.unserialize();
 
+      this.setFastCb();
+
       for (let i = 0; i < rollbackFrames; i++) {
         // Get input from the input history buffer.
         // The network system can predict input after the last confirmed tick (for the remote player).
@@ -280,6 +284,8 @@ export default class Netplay {
           this.checkSync();
         }
       }
+
+      this.unsetFastCb();
     }
   }
 

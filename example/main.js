@@ -93,6 +93,8 @@ function run(gamePath, conn, lpp, rpp) {
       () => retro.iterate(),                             // update game callback
       () => retro.getState(),                            // serialize callback
       (st) => retro.setState(st),                        // unserialize callback
+      () => retro.setFast(),
+      () => retro.unsetFast(),
       lpp,                                               // local player port
       rpp,                                               // remote player port
     );
@@ -115,7 +117,7 @@ const secret = document.querySelector("#peerId");
 
 let peer = new Peer();
 
-peer.on("open", function(id) {
+peer.on("open", (id) => {
   console.log("My peer ID is: " + id);
   secret.innerHTML = id;
 });
@@ -123,7 +125,7 @@ peer.on("open", function(id) {
 function registerConn(conn, lpp, rpp) {
   console.log("connection", conn);
 
-  conn.on("open", function() {
+  conn.on("open", () => {
     run("main.lua", conn, lpp, rpp);
     document.querySelector("#loading").style.display = "block";
     btn.style.display = "none";
@@ -131,11 +133,9 @@ function registerConn(conn, lpp, rpp) {
   });
 }
 
-peer.on("connection", function(conn) {
-  registerConn(conn, 1, 0);
-});
+peer.on("connection", (conn) => registerConn(conn, 1, 0));
 
-btn.addEventListener("click", function () {
+btn.addEventListener("click", () => {
   const peerId = window.prompt('Peer ID');
   if (!peerId)
     return;
