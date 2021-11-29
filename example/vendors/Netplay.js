@@ -103,20 +103,16 @@ export default class Netplay {
         const t = pkt.time;
         // console.log(t);
       }
-    //         } else if code == MsgCodeSync {
-    //           var tick int64
-    //           var syncData uint32
-    //           binary.Read(r, binary.LittleEndian, &tick)
-    //           binary.Read(r, binary.LittleEndian, &syncData)
-    //           // Ignore any tick that isn't more recent than the last sync data
-    //           if !isStateDesynced && tick > remoteSyncDataTick {
-    //             remoteSyncDataTick = tick
-    //             remoteSyncData = syncData
+      else if (pkt.code == MsgCodeSync) {
+        // Ignore any tick that isn't more recent than the last sync data
+        if (!isStateDesynced && pkt.tick > remoteSyncDataTick) {
+          remoteSyncDataTick = pkt.tick;
+          remoteSyncData = pkt.data;
 
-    //             // Check for a desync
-    //             isDesynced()
-    //           }
-    //         }
+          // Check for a desync
+          isDesynced();
+        }
+      }
     });
   }
 
@@ -289,9 +285,8 @@ export default class Netplay {
 
   // Gets the sync data to confirm the client game states are in sync
   gameGetSyncData() {
-    const s = state.Core.SerializeSize();
-    const bytes = state.Core.Serialize(s);
-    return crc32.ChecksumIEEE(bytes);
+    const bytes = this.serializeCb();
+    return b_crc32(bytes);
   }
 
   // Checks whether or not a game state desync has occurred between the local and remote clients.
@@ -472,11 +467,11 @@ export default class Netplay {
 
   // Make a sync data packet
   makeSyncDataPacket(tck, syncData) /*[]byte*/ {
-    let buf = new(bytes.Buffer);
-    binary.Write(buf, binary.LittleEndian, MsgCodeSync);
-    binary.Write(buf, binary.LittleEndian, tck);
-    binary.Write(buf, binary.LittleEndian, syncData);
-    return buf.Bytes();
+    return JSON.stringify({
+      code: MsgCodeSync,
+      tick: tck,
+      data: syncData,
+    });
   }
 
   // Generate handshake packet for connecting with another client.
