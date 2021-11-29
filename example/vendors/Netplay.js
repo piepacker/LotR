@@ -38,7 +38,13 @@ let lastSyncedTick = -1;
 const MaxFrames = 60;
 let LocalPlayerPort = 0;
 let RemotePlayerPort = 1;
-// let buffers = [MaxPlayers][MaxFrames]PlayerState{};
+let inputBuffers = [
+  new Uint16Array(MaxFrames),
+  new Uint16Array(MaxFrames),
+  new Uint16Array(MaxFrames),
+  new Uint16Array(MaxFrames),
+  new Uint16Array(MaxFrames),
+]; //[MaxPlayers][MaxFrames]PlayerState{}
 
 let saved = {
 	GameState: null,
@@ -121,12 +127,12 @@ export default class Netplay {
       this.inputPoll();
 
       // Update local input history
-      let sendInput = input.getLatest(input.LocalPlayerPort);
+      let sendInput = this.inputGetLatest(input.LocalPlayerPort);
       setLocalInput(sendInput, lastGameTick+inputDelayFrames);
 
       // Set the input state for the current tick for the remote player's character.
-      input.SetState(input.LocalPlayerPort, getLocalInputState(lastGameTick));
-      input.SetState(input.RemotePlayerPort, getRemoteInputState(lastGameTick));
+      input.SetState(input.LocalPlayerPort, this.getLocalInputState(lastGameTick));
+      input.SetState(input.RemotePlayerPort, this.getRemoteInputState(lastGameTick));
 
       // Increment the tick count only when the game actually updates.
       this.gameUpdate();
@@ -204,8 +210,8 @@ export default class Netplay {
       for (let i = 0; i < rollbackFrames; i++) {
         // Get input from the input history buffer.
         // The network system can predict input after the last confirmed tick (for the remote player).
-        input.SetState(input.LocalPlayerPort, getLocalInputState(tick));
-        input.SetState(input.RemotePlayerPort, getRemoteInputState(tick));
+        input.SetState(input.LocalPlayerPort, this.getLocalInputState(tick));
+        input.SetState(input.RemotePlayerPort, this.getRemoteInputState(tick));
 
         const lastRolledBackGameTick = tick;
         this.gameUpdate();
@@ -349,7 +355,7 @@ export default class Netplay {
 
   inputGetState(port /*uint*/, tck /*int64*/) /*PlayerState*/ {
     const frame = (MaxFrames + tck) % MaxFrames;
-    const st = buffers[port][frame];
+    const st = inputBuffers[port][frame];
     return st;
   }
 
@@ -366,7 +372,7 @@ export default class Netplay {
   inputSetState(port /*uint*/, st /*PlayerState*/) {
     for (let i = 0; i < st.length; i++) {
       const b = st[i];
-      buffers[port][this.inputIndex(0)][i] = b;
+      inputBuffers[port][this.inputIndex(0)][i] = b;
     }
   }
 
@@ -433,9 +439,9 @@ export default class Netplay {
   // Encodes the player input state into a compact form for network transmission.
   encodeInput(st /*input.PlayerState*/) /*uint32*/ {
     let out = 0;
-    for (let i = 0; i < st.length; i++) {
+    for (let i = 0; i < 12; i++) {
       const b = st[i];
-      out |= (uint32(b) << i);
+      out |= (b << i);
     }
     return out;
   }
