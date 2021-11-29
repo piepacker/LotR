@@ -56,6 +56,7 @@ export default class Netplay {
     this.gameUpdate = updateCb;
     this.localPlayerPort = lpp;
     this.remotePlayerPort = rpp;
+    this.fastForward = false;
 
     this.listen();
 
@@ -255,10 +256,10 @@ export default class Netplay {
       // Rerun rollbackFrames number of updates.
       const rollbackFrames = lastGameTick - lastSyncedTick;
 
-      console.log("Rollback", rollbackFrames, "frames");
+      // console.log("Rollback", rollbackFrames, "frames");
 
-      // Disable audio because audio is blocking
-      // state.FastForward = true;
+      // Execute as fast as possible to catch up
+      this.fastForward = true;
 
       // Must revert back to the last known synced game frame.
       this.unserialize();
@@ -275,7 +276,7 @@ export default class Netplay {
 
         // Confirm that we are indeed still synced
         if (lastRolledBackGameTick <= confirmedTick) {
-          console.log("Saving after a rollback");
+          // console.log("Saving after a rollback");
 
           this.serialize();
 
@@ -286,8 +287,8 @@ export default class Netplay {
         }
       }
 
-      // Enable audio again
-      // state.FastForward = false;
+      // Back to normal speed
+      this.fastForward = false;
     }
   }
 
@@ -358,7 +359,7 @@ export default class Netplay {
     if (tck > confirmedTick) {
       // Repeat the last confirmed input when we don't have a confirmed tck
       tck = confirmedTick;
-      console.log("Predict:", confirmedTick, remoteInputHistory[(historySize+tck)%historySize]);
+      // console.log("Predict:", confirmedTick, remoteInputHistory[(historySize+tck)%historySize]);
     }
     return this.decodeInput(remoteInputHistory[(historySize+tck)%historySize]);
   }
