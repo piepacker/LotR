@@ -117,15 +117,9 @@ function registerConn(conn, lpp, rpp) {
   console.log("connection", conn);
 
   conn.on("open", function() {
-    conn.on("data", function(data) {
-      console.log("Received", data);
-
-      run("main.lua", conn, lpp, rpp);
-      document.querySelector("#loading").style.display = "block";
-      btn.style.display = "none";
-    });
-
-    conn.send("Hello!");
+    run("main.lua", conn, lpp, rpp);
+    document.querySelector("#loading").style.display = "block";
+    btn.style.display = "none";
   });
 }
 

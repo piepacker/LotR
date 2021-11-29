@@ -57,6 +57,59 @@ export default class Netplay {
     this.gameUpdate = updateCb;
     this.localPlayerPort = lpp;
     this.remotePlayerPort = rpp;
+
+    conn.on("data", function(data) {
+      const pkt = JSON.parse(data);
+      console.log("Received", pkt);
+
+      if (pkt.code == MsgCodePlayerInput) {
+        // Break apart the packet into its parts.
+        const tickDelta = pkt.tickDelta;
+        const receivedTick = pkt.receivedTick;
+
+        // We only care about the latest tick delta, so make sure the confirmed frame is atleast the same or newer.
+        // This would work better if we added a packet count.
+        if (receivedTick >= confirmedTick)
+          remoteTickDelta = tickDelta;
+
+        if (receivedTick > confirmedTick) {
+          if (receivedTick-confirmedTick > inputDelayFrames)
+            console.log("Received packet with a tick too far ahead. Last: ", confirmedTick, " Current: ", receivedTick);
+
+          confirmedTick = receivedTick;
+
+          for (let offset = sendHistorySize - 1; offset >= 0; offset--) { // 4, 3, 2, 1, 0
+            const encodedInput = pkt[offset];
+            // Save the input history sent in the packet.
+            this.setRemoteEncodedInput(encodedInput, receivedTick-offset);
+          }
+        }
+      }
+
+    //           else if code == MsgCodePing {
+    //           var pingTime int64
+    //           binary.Read(r, binary.LittleEndian, &pingTime)
+    //           sendPacket(makePongPacket(time.Unix(pingTime, 0)), 1)
+    //         } else if code == MsgCodePong {
+    //           var pongTime int64
+    //           binary.Read(r, binary.LittleEndian, &pongTime)
+    //         } else if code == MsgCodeSync {
+    //           var tick int64
+    //           var syncData uint32
+    //           binary.Read(r, binary.LittleEndian, &tick)
+    //           binary.Read(r, binary.LittleEndian, &syncData)
+    //           // Ignore any tick that isn't more recent than the last sync data
+    //           if !isStateDesynced && tick > remoteSyncDataTick {
+    //             remoteSyncDataTick = tick
+    //             remoteSyncData = syncData
+
+    //             // Check for a desync
+    //             isDesynced()
+    //           }
+    //         }
+    });
+
+    conn.send(JSON.stringify({code: MsgCodeHandshake}));
   }
 
   update() {
@@ -377,20 +430,23 @@ export default class Netplay {
 
   // Generate a packet containing information about player input.
   makeInputPacket(tck /*int64*/) /*[]byte*/ {
-    let buf = new(bytes.Buffer);
-    binary.Write(buf, binary.LittleEndian, MsgCodePlayerInput);
-    binary.Write(buf, binary.LittleEndian, localTickDelta);
-    binary.Write(buf, binary.LittleEndian, tck);
+    let pkt = {
+      code: MsgCodePlayerInput,
+      tickDelta: localTickDelta,
+      receivedTick: tck,
+      inputs: [],
+    };
 
     const historyIndexStart = tck - sendHistorySize + 1;
     // console.log("Make input", tck, historyIndexStart)
     for (i = 0; i < sendHistorySize; i++) {
       const encodedInput = localInputHistory[(historySize+historyIndexStart+i)%historySize];
-      binary.Write(buf, binary.LittleEndian, encodedInput);
+      // binary.Write(buf, binary.LittleEndian, encodedInput);
+      inputs[i] = encodedInput;
       // console.log((historySize + historyIndexStart + i) % historySize)
     }
 
-    return buf.Bytes();
+    return JSON.stringify(pkt);
   }
 
   // Send a ping message in order to test network latency
