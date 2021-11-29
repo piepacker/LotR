@@ -86,6 +86,7 @@ function run(gamePath, conn) {
 
   libretro(Module).then((retro) => {
     const netplay = new Netplay(
+      retro,
       conn,
       () => pollInputs(retro),
       () => retro.iterate(),
