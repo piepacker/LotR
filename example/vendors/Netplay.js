@@ -65,12 +65,12 @@ export default class Netplay {
   listen() {
     this.conn.on("data", (data) => {
       const pkt = JSON.parse(data);
-      // console.log("Received", pkt);
 
       if (pkt.code == MsgCodeHandshake) {
         connectedToClient = true;
       }
       else if (pkt.code == MsgCodePlayerInput) {
+        console.log("Received", pkt.inputs);
         // Break apart the packet into its parts.
         const tickDelta = pkt.tickDelta;
         const receivedTick = pkt.receivedTick;
@@ -87,7 +87,7 @@ export default class Netplay {
           confirmedTick = receivedTick;
 
           for (let offset = sendHistorySize - 1; offset >= 0; offset--) { // 4, 3, 2, 1, 0
-            const encodedInput = pkt[offset];
+            const encodedInput = pkt.inputs[offset];
             // Save the input history sent in the packet.
             this.setRemoteEncodedInput(encodedInput, receivedTick-offset);
           }
