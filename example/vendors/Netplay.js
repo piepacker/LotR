@@ -33,11 +33,8 @@ let remoteInputHistory = new Uint32Array(historySize);
 // let clientAddr net.Addr;
 let lastSyncedTick = -1;
 // let messages chan []byte;
-// let inputPoll, gameUpdate func();
 
 const MaxFrames = 60;
-let LocalPlayerPort = 0;
-let RemotePlayerPort = 1;
 let inputBuffers = [
   new Uint16Array(MaxFrames),
   new Uint16Array(MaxFrames),
@@ -53,11 +50,13 @@ let saved = {
 }
 
 export default class Netplay {
-  constructor(retro, conn, pollCb, updateCb) {
+  constructor(retro, conn, pollCb, updateCb, lpp, rpp) {
     this.retro = retro;
     this.conn = conn;
     this.inputPoll = pollCb;
     this.gameUpdate = updateCb;
+    this.localPlayerPort = lpp;
+    this.remotePlayerPort = rpp;
   }
 
   update() {
@@ -127,12 +126,12 @@ export default class Netplay {
       this.inputPoll();
 
       // Update local input history
-      let sendInput = this.inputGetLatest(input.LocalPlayerPort);
+      let sendInput = this.inputGetLatest(this.localPlayerPort);
       setLocalInput(sendInput, lastGameTick+inputDelayFrames);
 
       // Set the input state for the current tick for the remote player's character.
-      input.SetState(input.LocalPlayerPort, this.getLocalInputState(lastGameTick));
-      input.SetState(input.RemotePlayerPort, this.getRemoteInputState(lastGameTick));
+      input.SetState(this.localPlayerPort, this.getLocalInputState(lastGameTick));
+      input.SetState(this.remotePlayerPort, this.getRemoteInputState(lastGameTick));
 
       // Increment the tick count only when the game actually updates.
       this.gameUpdate();
@@ -210,8 +209,8 @@ export default class Netplay {
       for (let i = 0; i < rollbackFrames; i++) {
         // Get input from the input history buffer.
         // The network system can predict input after the last confirmed tick (for the remote player).
-        input.SetState(input.LocalPlayerPort, this.getLocalInputState(tick));
-        input.SetState(input.RemotePlayerPort, this.getRemoteInputState(tick));
+        this.inputSetState(this.localPlayerPort, this.getLocalInputState(tick));
+        this.inputSetState(this.remotePlayerPort, this.getRemoteInputState(tick));
 
         const lastRolledBackGameTick = tick;
         this.gameUpdate();

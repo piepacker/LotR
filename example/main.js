@@ -75,11 +75,10 @@ function pollInputs(retro) {
   }, 8)
 }
 
-function run(gamePath, conn) {
+function run(gamePath, conn, lpp, rpp) {
   const canvas = document.querySelector("#screen");
   const video = new Video(canvas);
   const audio = new Audio();
-
 
   Module.video = video;
   Module.audio = audio;
@@ -90,6 +89,8 @@ function run(gamePath, conn) {
       conn,
       () => pollInputs(retro),
       () => retro.iterate(),
+      lpp,
+      rpp,
     );
 
     retro.loadGame(gamePath);
@@ -112,14 +113,14 @@ peer.on("open", function(id) {
   console.log("My peer ID is: " + id);
 });
 
-function registerConn(conn) {
+function registerConn(conn, lpp, rpp) {
   console.log("connection", conn);
 
   conn.on("open", function() {
     conn.on("data", function(data) {
       console.log("Received", data);
 
-      run("main.lua", conn);
+      run("main.lua", conn, lpp, rpp);
       document.querySelector("#loading").style.display = "block";
       btn.style.display = "none";
     });
@@ -129,7 +130,7 @@ function registerConn(conn) {
 }
 
 peer.on("connection", function(conn) {
-  registerConn(conn)
+  registerConn(conn, 1, 0);
 });
 
 btn.addEventListener("click", function () {
@@ -138,6 +139,6 @@ btn.addEventListener("click", function () {
     return;
 
   const conn = peer.connect(peerId);
-  registerConn(conn);
+  registerConn(conn, 0, 1);
 });
 
