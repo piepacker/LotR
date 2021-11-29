@@ -116,11 +116,13 @@ function run(gamePath, conn, lpp, rpp) {
 }
 
 const btn = document.querySelector("button");
+const secret = document.querySelector("#peerId");
 
 let peer = new Peer();
 
 peer.on("open", function(id) {
   console.log("My peer ID is: " + id);
+  secret.innerHTML = id;
 });
 
 function registerConn(conn, lpp, rpp) {
@@ -130,6 +132,7 @@ function registerConn(conn, lpp, rpp) {
     run("main.lua", conn, lpp, rpp);
     document.querySelector("#loading").style.display = "block";
     btn.style.display = "none";
+    secret.style.display = "none";
   });
 }
 
