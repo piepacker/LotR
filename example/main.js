@@ -87,12 +87,14 @@ function run(gamePath, conn, lpp, rpp) {
 
   libretro(Module).then((retro) => {
     const netplay = new Netplay(
-      retro,
-      conn,
-      () => { retro.input_user_state[lpp] = polled[0] },
-      () => retro.iterate(),
-      lpp,
-      rpp,
+      conn,                                              // p2p connection
+      () => { retro.input_user_state[lpp] = polled[0] }, // input poll callback
+      (port) => { return retro.input_user_state[port] }, // input state callback
+      () => retro.iterate(),                             // update game callback
+      () => retro.getState(),                            // serialize callback
+      (st) => retro.setState(st),                        // unserialize callback
+      lpp,                                               // local player port
+      rpp,                                               // remote player port
     );
     retro.inputState = (port, id) => { return netplay.inputCurrentState(port)[id] };
 

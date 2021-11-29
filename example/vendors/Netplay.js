@@ -49,11 +49,13 @@ let saved = {
 }
 
 export default class Netplay {
-  constructor(retro, conn, pollCb, updateCb, lpp, rpp) {
-    this.retro = retro;
+  constructor(conn, inputPollCb, inputStateCb, updateCb, serializeCb, unserializeCb, lpp, rpp) {
     this.conn = conn;
-    this.inputPoll = pollCb;
+    this.inputPoll = inputPollCb;
+    this.inputState = inputStateCb;
     this.gameUpdate = updateCb;
+    this.serializeCb = serializeCb;
+    this.unserializeCb = unserializeCb;
     this.localPlayerPort = lpp;
     this.remotePlayerPort = rpp;
     this.fastForward = false;
@@ -226,7 +228,7 @@ export default class Netplay {
   }
 
   serialize() {
-    saved.GameState = this.retro.getState();
+    saved.GameState = this.serializeCb();
     // saved.Inputs = input.Serialize();
     saved.Tick = tick;
   }
@@ -237,7 +239,7 @@ export default class Netplay {
       return;
     }
 
-    this.retro.setState(saved.GameState);
+    this.unserializeCb(saved.GameState);
     // input.Unserialize(saved.Inputs);
     tick = saved.Tick;
   }
@@ -398,25 +400,26 @@ export default class Netplay {
       this.conn.send(packet);
   }
 
-  inputIndex(offset /*int64*/) /*int64*/ {
-    let tck = tick;
-    tck += offset;
-    return (MaxFrames + tick) % MaxFrames;
-  }
-
   inputGetState(port /*uint*/, tck /*int64*/) /*PlayerState*/ {
     const frame = (MaxFrames + tck) % MaxFrames;
     const st = inputBuffers[port][frame];
     return st;
   }
 
-  // inputGetLatest returns the most recent polled inputs
+  // inputGetLatest returns the most recently polled inputs
   inputGetLatest(port /*uint*/) /*PlayerState*/ {
-    return this.retro.input_user_state[port];
+    return this.inputState(port);
   }
 
+  // returns the input state at the current tick
   inputCurrentState(port /*uint*/) /*PlayerState*/ {
     return this.inputGetState(port, tick);
+  }
+
+  inputIndex(offset /*int64*/) /*int64*/ {
+    let tck = tick;
+    tck += offset;
+    return (MaxFrames + tick) % MaxFrames;
   }
 
   // inputSetState forces the input state for a given player
