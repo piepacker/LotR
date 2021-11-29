@@ -32,18 +32,20 @@ const joyMapping = {
   5: 11, // RETRO_DEVICE_ID_JOYPAD_R
 }
 
+let polled = [{},{},{},{},{}];
+
 function pollInputs(retro) {
   window.addEventListener(`keydown`, e => {
     e.preventDefault();
     if (keyMapping.hasOwnProperty(e.code)) {
-      retro.input_user_state[0][keyMapping[e.code]] = true;
+      polled[0][keyMapping[e.code]] = true;
     }
   });
 
   window.addEventListener(`keyup`, e => {
     e.preventDefault();
     if (keyMapping.hasOwnProperty(e.code)) {
-      retro.input_user_state[0][keyMapping[e.code]] = false;
+      polled[0][keyMapping[e.code]] = false;
     }
   });
 
@@ -65,12 +67,12 @@ function pollInputs(retro) {
       if (!pad) continue;
       pad.buttons.forEach((v, code) => {
         if (joyMapping.hasOwnProperty(code))
-          retro.input_user_state[pad.index][joyMapping[code]] = v.pressed
+          polled[pad.index][joyMapping[code]] = v.pressed
       });
-      if (pad.axes[0] >  0.5) retro.input_user_state[pad.index][7] = true;
-      if (pad.axes[0] < -0.5) retro.input_user_state[pad.index][6] = true;
-      if (pad.axes[1] >  0.5) retro.input_user_state[pad.index][5] = true;
-      if (pad.axes[1] < -0.5) retro.input_user_state[pad.index][4] = true;
+      if (pad.axes[0] >  0.5) polled[pad.index][7] = true;
+      if (pad.axes[0] < -0.5) polled[pad.index][6] = true;
+      if (pad.axes[1] >  0.5) polled[pad.index][5] = true;
+      if (pad.axes[1] < -0.5) polled[pad.index][4] = true;
     }
   }, 8)
 }
@@ -87,7 +89,7 @@ function run(gamePath, conn, lpp, rpp) {
     const netplay = new Netplay(
       retro,
       conn,
-      () => {}, // pollInputs(retro),
+      () => { retro.input_user_state = polled },
       () => retro.iterate(),
       lpp,
       rpp,
@@ -96,6 +98,8 @@ function run(gamePath, conn, lpp, rpp) {
     retro.loadGame(gamePath);
     pollInputs(retro);
     document.querySelector("#loading").style.display = "none";
+
+    retro.inputState = (port, id) => { return netplay.inputCurrentState(port)[id] };
 
     const iterate = () => {
       netplay.update();

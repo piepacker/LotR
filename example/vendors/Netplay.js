@@ -35,11 +35,11 @@ let lastSyncedTick = -1;
 
 const MaxFrames = 60;
 let inputBuffers = [
-  new Uint16Array(MaxFrames),
-  new Uint16Array(MaxFrames),
-  new Uint16Array(MaxFrames),
-  new Uint16Array(MaxFrames),
-  new Uint16Array(MaxFrames),
+  Array.from(Array(MaxFrames), () => new Array(12)),
+  Array.from(Array(MaxFrames), () => new Array(12)),
+  Array.from(Array(MaxFrames), () => new Array(12)),
+  Array.from(Array(MaxFrames), () => new Array(12)),
+  Array.from(Array(MaxFrames), () => new Array(12)),
 ]; //[MaxPlayers][MaxFrames]PlayerState{}
 
 let saved = {
@@ -70,7 +70,7 @@ export default class Netplay {
         connectedToClient = true;
       }
       else if (pkt.code == MsgCodePlayerInput) {
-        console.log("Received", pkt.inputs);
+        // console.log("Received", pkt.inputs);
         // Break apart the packet into its parts.
         const tickDelta = pkt.tickDelta;
         const receivedTick = pkt.receivedTick;
@@ -426,7 +426,7 @@ export default class Netplay {
 
   // inputSetState forces the input state for a given player
   inputSetState(port /*uint*/, st /*PlayerState*/) {
-    for (let i = 0; i < st.length; i++) {
+    for (let i = 0; i < 12; i++) {
       const b = st[i];
       inputBuffers[port][this.inputIndex(0)][i] = b;
     }
@@ -507,7 +507,7 @@ export default class Netplay {
   decodeInput(inp /*uint32*/) /*input.PlayerState*/ {
     let st = {}; /*input.PlayerState{}*/
     for (let i = 0; i < 12; i++) {
-      st[i] = inp & (1 << i);
+      st[i] = (inp & (1 << i)) != 0;
     }
     return st;
   }
