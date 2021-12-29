@@ -16,7 +16,7 @@ LDFLAGS += --js-library $(FE_SRC)/video.js
 LDFLAGS += --js-library $(FE_SRC)/environment.js
 LDFLAGS += --post-js $(FE_SRC)/libretro-post.js
 
-LDFLAGS += -O3
+LDFLAGS += -O3 -flto
 #LDFLAGS += -s ASSERTIONS=1
 #LDFLAGS += -s ASSERTIONS=1 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=1
 #LDFLAGS += -s ASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=2
@@ -63,7 +63,7 @@ mesens: $(SETUP) $(FE_RETRO_BC) mesens.bc
 		$(LDFLAGS) -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH=1 -o $(OUTDIR)/mesens_libretro.js
 
 mesens.bc: $(SETUP)
-	platform=emscripten emmake make $(MAKEFLAGS) -C cores/mesens/Libretro
+	platform=emscripten emmake make $(MAKEFLAGS) -C cores/mesens/Libretro LTO=true NO_DEBUGGER=true
 
 mesen: $(SETUP) $(FE_RETRO_BC) mesen.bc
 	emcc $(FE_RETRO_BC) \
