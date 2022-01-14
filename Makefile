@@ -71,7 +71,7 @@ mesen: $(SETUP) $(FE_RETRO_BC) mesen.bc
 		$(LDFLAGS) -s INITIAL_MEMORY=128MB -s ALLOW_MEMORY_GROWTH=1 -o $(OUTDIR)/mesen_libretro.js
 
 mesen.bc: $(SETUP)
-	platform=emscripten emmake make $(MAKEFLAGS) -C cores/mesen/Libretro
+	platform=emscripten emmake make $(MAKEFLAGS) -C cores/mesen/Libretro LTO=true
 
 mamearcade: $(SETUP) $(FE_RETRO_BC) mamearcade.bc
 	emcc $(FE_RETRO_BC) \
