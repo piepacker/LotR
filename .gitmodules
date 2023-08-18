@@ -28,3 +28,6 @@
 [submodule "cores/dosbox_pure"]
 	path = cores/dosbox_pure
 	url = https://github.com/piepacker/dosbox_pure.git
+[submodule "cores/swanstation"]
+	path = cores/swanstation
+	url = https://github.com/piepacker/swanstation.git
